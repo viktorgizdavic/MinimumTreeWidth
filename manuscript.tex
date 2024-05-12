@@ -1,0 +1,212 @@
+\documentclass[10pt]{article}
+\usepackage{cmsrb}
+\usepackage[OT2,T1]{fontenc} %better to use T1, but OT1 will also work
+\usepackage[serbian]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
+
+
+
+\usepackage{blindtext}
+
+\usepackage{MnSymbol}
+
+\usepackage[cal=boondox,scr=boondoxo]{mathalfa}
+
+\usepackage{float}
+\usepackage{subfig}
+\usepackage{fancybox,graphicx}
+\usepackage{subfig}
+\usepackage{caption}
+%\usepackage{subcaption}
+\usepackage{color}
+\usepackage{authblk}
+
+\usepackage[colorlinks]{hyperref}
+\input{doiCmd} %doi command
+
+\usepackage{accents}
+\usepackage[titletoc,title]{appendix}
+%\usepackage[numbers,sort&compress]{natbib}
+\usepackage{cite}
+
+
+%floor and ceiling functions
+\usepackage{mathtools}
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+
+
+\usepackage[top=2in, bottom=1.5in, left=1in, right=1in]{geometry}
+\newcommand{\soft}{\mathcal{S}}
+\newcommand{\hard}{\mathcal{H}}
+\newcommand*\underdot[1]{ \underaccent{\bullet}{\mathcal{#1}} } %requiere: \usepackage{accents} 
+\newcommand*\UnderDot[1]{ \underaccent{\bullet}{#1} } %requiere: \usepackage{accents} 
+
+\usepackage{stackengine}
+\usepackage{xcolor}
+\newcommand\barbelow[1]{\stackunder[2.5pt]{$#1$}{\rule{1.2ex}{.15ex}}}
+
+\newcommand{\pvec}[1]{\vec{#1}\mkern2mu\vphantom{#1}} %to prime a vector
+
+\newcommand*\UnderTilde[1]{ \underaccent{\sim}{#1} }
+  
+\renewcommand{\figurename}{Fig.}
+
+\title{Minimum Tree Width} 
+ 
+\author{Vladimir Kastratović, Viktor Gizdavić}
+
+
+\begin{document}
+
+
+    \maketitle
+
+\renewcommand{\contentsname}{Sadržaj}
+\tableofcontents
+
+\section{Uvod}
+Neka je dat neusmeren graf $G=\left(V,E\right)$.
+Dekompozicija stabla je par $\left(\{X_i:i\in I\},T\right)$ gde je $T=\left(I,F\right)$ drvo i $\{X_i\}$ je skup podskupova od V, tako da:
+
+\begin{enumerate}
+    \item $\bigcup_{i\in I} X_i=V$,
+    \item za svako $(v,w)\in E$, postoji $i\in I$ tako da $u,v\in X_i$,
+    \item za svako $v\in V$, skup $\{i\in I: v\in X_i\}$ predstavlja povezano poddrvo od T.
+\end{enumerate}
+
+Širina stabla dekompozicije je jednaka $Tw = \max_{i \in I} \vert X_i\vert-1$. Minimalna širina stabla je najmanje takvo $Tw$.
+
+Ovaj problem je NP težak problem. Može da se aproksimira unutar $O(\log \vert V\vert)$ složenosti. Mnogi algoritmi koji rešavaju NP teške probleme iz oblasti veštačke inteligencije, operativnih istraživanja, dizajna kola itd. su eksonencijalne složenosti samo pri izračunavanju širine stabla. Npr: "Bucket
+elimination [Dechter, 1999]" i "Junction-tree elimination [Lauritzen and Spiegelhalter, 1988]". Ovi algoritmi se odvijaju u dva koraka: (1) konstrukcija dobre dekompozicije stabla i (2) rešavanje problema nad ovom dekompozicijom, gde je drugi korak uglavnom eksponencijalan po širini stabla dekompozicije iz koraka (1). Radi postizanja efikasnijeg rešenja, može se koristiti "branch and bound" tehnika. Neke od poznatih heuristike koje se koriste u ovoj metodi su "min-degree", "max-cardinality search, min-fill", međutim, u najgorem slučaju, algoritam može biti eksponencijalne složenosti. Zbog toga, u ovom radu smo koristili noviju heuristiku baziranu na "minor-min-width", koju ćemo opisati u narednim sekcijama.
+
+\section{Algoritmi za rešavanje problema}
+\subsection{Gruba sila}
+--doraditi+
+\subsection{Optimizovani algoritam}
+Za izračunavanje minimalne širine stabla koristimo "branch and bound" algoritam. Za heuristiku, "minor-min-width".
+
+\subsubsection{minor-min-width algoritam}
+
+Ulaz: Neusmeren, povezan graf G.
+
+Izlaz: Donja granica širine grafa G.
+
+\begin{enumerate}
+    \item \textit{lb} = 0
+    \item Ponavljaj:
+    \begin{enumerate}
+    \item Spoji granu između čvora \textit{v} najmanjeg stepena i čvora $u\in N(v)$ takvog da je stepen ćvora $u$ najmanji u $N(v)$ da bi napravili novi graf $G'$
+    \item $lb = MAX(lb, degree_G(v))$
+    \item Postavi G na G'
+    \end{enumerate}
+    \item dokle god ima ćvorova u G
+    \item return \textit{lb}
+\end{enumerate}
+
+Minor-min-width heuristika je bazirana na teoremi iz teorije grafova, koja tvrdi da širina grafa nikad nije manja od širine njegovor minora.
+\subsubsection{BnB algoritam}
+
+Ulaz: Neusmeren, povezan graf G.
+
+Izlaz: Minimalna širina stabla.
+
+\begin{enumerate}
+    \item Inicijalizacija: Stanje \textit{s} je par grafa $G^s = G$ i parcijalnog poretka $x^s = \phi.\\$$g(s) = 0, h(s) = mmw(G), f(s) = h(s)$, $ub = \infty$.
+    \item If$(f(s) < ub$) \textbf{BB}$(s)$
+    \item return \textit{ub}
+\end{enumerate}
+
+\textbf{pod-procedura BB(s)}
+\begin{enumerate}
+    \item IF $|V_Gs|<2$ THEN $ub = MIN(ub, f(s))$
+    \item ELSE FOR za svaki čvor $v$ u $G^s$:
+    \begin{enumerate}
+    \item Napravi stanje $s' = ({G^s^'}, {x^s^'})$ gde je\\ ${G^s^'} = elim({G^s}, v)$ i  ${x^s^'} = (x^s, v).$
+    \item $g({s^'}) = MAX(g(s), degree_{G^s}(v))$
+    \item $h({s^'}) =$ \textbf{minor-min-width}($G^s^'})$
+    \item $f({s^'}) = MAX(g({s^'}), h({s^'}))$
+    \item If $f({s^'}) < ub$ onda $BB({s^'})$
+    \end{enumerate}
+\end{enumerate}
+
+Na početku, gornja granica se postavlja na beskonačnost, a donja granica se izračunava korišćenjem minor-min-width algoritma.
+
+Ako je gornja granica manja ili jednaka donjoj, vraćamo nju kao optimalno rešenje. U suprotnom, inicijalizujemo najbolje rešenje na gornju granicu, i pokrećemo proceduru BB u potrazi za boljim rešenjem. Ako u toku BB-a nadjemo parcijalno rešenje sa donjom granicom većom od trenutnog $ub$, vrši se odsecanje te grane pretrage. U suprotnom, ako uspešno prođemo kroz sve čvorove, najbolje rešenje se postavlja na manji od gornje granice i izračunate donje granice.
+
+Svako stanje $s$ je par: Graf ${G^s}$ i parcijalni poredak ${x^s}$. Graf ${G^s}$ u stanju $s$ se dobija izbacivanjem čvorova u poretku ${x^s}$ iz originalnog grafa $G$. Naredna stanja se dobijaju iz stanja $s$ izbacivanjem proizvoljnog čvora $v \in V_{G^s}$. Vrednost $g$ stanja $s$ je širina poretka ${x^s}$ od početnog čvora, vrednost $h$ je donja granica širine stabla ${G^s}$.
+
+\section{Eksperimentalni rezultati}
+
+
+This is a sample of Table.~\ref{analogiesTableEq}. All tables in the document must be cited.
+
+\begin{table}[h]
+\begin{minipage}{.95\textwidth}
+\begin{center}\small
+    \begin{tabular}{ | p{7cm} | p{7cm} | }
+    \hline
+    \textbf{Electrostatics} & \textbf{Magnetostatics} \\ \hline
+    Electric Field & Magnetic field (Biot-Savart law) \\
+    $\boldsymbol{E}(\boldsymbol{r}) = \frac{V_o}{2\pi} \mbox{sgn}(z) \int_{\mathscr{G}}  \frac{\boldsymbol{\mathscr{W}}_{\nu}(\boldsymbol{r}')d^2 \boldsymbol{r}' \times (\boldsymbol{r}-\boldsymbol{r}')}{|\boldsymbol{r}-\boldsymbol{r}'|^3}$ & $\boldsymbol{B}(\boldsymbol{r}) = \frac{\mu_o}{4\pi} \int_{\mathscr{G}}  \frac{\boldsymbol{\mathscr{K}}(\boldsymbol{r}')d^2 \boldsymbol{r}' \times (\boldsymbol{r}-\boldsymbol{r}')}{|\boldsymbol{r}-\boldsymbol{r}'|^3}$ \\ \hline
+    Weight vector & Surface current density\\
+    $\boldsymbol{\mathscr{W}}_{\nu}(\boldsymbol{r})$ 
+    & $\boldsymbol{\mathscr{K}}(\boldsymbol{r})$\\ \hline
+    Continuity & Continuity (charge conservation) \\
+    $\nabla \cdot \boldsymbol{\mathscr{W}}_{\nu}(\boldsymbol{r}) = 0 $
+    &$\nabla \cdot \boldsymbol{\mathscr{K}}(\boldsymbol{r}) = 0$ \\\hline    
+    Gauss' law & Gauss' law \\
+    $\boldsymbol{\nabla}\cdot\boldsymbol{E} = \frac{1}{\epsilon_o}\sigma(\boldsymbol{r})\delta(z)$ 
+    & $\boldsymbol{\nabla}\cdot\boldsymbol{B}=0$\\
+    \hline
+    \end{tabular}
+    \caption {The analogy between the gaped SE and magnetostatics.}
+    \label{analogiesTableEq}
+\end{center}
+\end{minipage}%
+\end{table}
+
+
+asdfasdfasdf
+
+\section{Zaključak}
+BnB algoritam izložen u sekciji 2.2.2 se može dodatno unaprediti na sledeće načine:
+\begin{enumerate}
+    \item Prilikom inicijalizacije, umesto postavljanja gornje granice na beskonačnost, može se izračunati min-fill heuristikom.
+    \item Poboljšavanje vrednosti $f$ za svako stanje $s$
+    \item Redukcija faktora grananja u svakom stanju
+    \item Korišćenje pravila propagacije i zasecanja
+\end{enumerate}
+Neke od navedenih poboljšanja su dalje izložena u radu [1].
+
+\bibliographystyle{ieeetr} %alpha, apalike, ieeetr
+
+\begin{thebibliography}{99} % Bibliography - this is %intentionally simple in this template
+
+\bibitem{anytimetreewidth} Vibhav Gogate and Rina Dechter, \emph{A Complete Anytime Algorithm for Treewidth}, 11. Jul 2012.
+
+%\bibitem{cohl1999compact} Cohl, Howard S., and Joel E. Tohline, \emph{A compact cylindrical Green's function expansion for the solution of potential problems}, The astrophysical journal \textbf{527} : 86 - 101 (1999) %DOI: https://doi.org/10.1086/308062
+
+%\bibitem{abramowitz1965handbook} Abramowitz, Milton, and Irene A. Stegun. \emph{Handbook of Mathematical Functions With Formulas, Graphs, and Mathematical Tables.} (1964).
+
+
+\end{thebibliography}
+
+%croos section karlie
+%GOOD: http://www.eumetrain.org/satmanu/CMs/TrCyAt/print.htm 
+%https://physics.stackexchange.com/questions/275799/why-is-the-eye-of-a-cyclone-a-forced-vortex
+%http://www.chanthaburi.buu.ac.th/~wirote/met/tropical/textbook_2nd_edition/navmenu.php_tab_9_page_7.1.0.htm
+%http://www.atmos.umd.edu/~dalin/andrew/part2.html
+%https://nptel.ac.in/courses/119102007/2
+%http://www.911omissionreport.com/steering_hurricanes.html
+%https://www.youtube.com/watch?v=_brY_9ME8iE brooks
+\end{document}

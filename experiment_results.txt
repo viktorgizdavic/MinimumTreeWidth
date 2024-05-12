@@ -1,0 +1,4 @@
+Average values for test size 3
+(n, e): time optimized, time brute, tree width optimized, tree width brute
+(8, 12): 0.00665947, 1.98587, 3, 3
+(10, 15): 0.0161204, 153.404, 3, 3
