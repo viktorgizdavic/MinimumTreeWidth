@@ -1,6 +1,7 @@
 #include "graph_generator.hpp"
 #include "brute_force/graph_brute_force.hpp"
-#include "optimized/graph.hpp"
+#include "optimized - minor min width lb/graph.hpp"
+#include "semi-optimized - min width lb/graph.hpp"
 
 #include <chrono>
 #include <utility>
@@ -9,7 +10,9 @@
 #include <fstream>
 #include <sstream>
 
-#define TEST_SIZE (3)
+#define TEST_SIZE (1000)
+
+#define EXCLUDE_BRUTE_FORCE (1)
 
 template<typename Func, typename Arg>
 std::pair<typename std::result_of<Func(Arg)>::type, double> executeAndMeasureTime(Func&& func, Arg arg) {
@@ -35,6 +38,19 @@ int brute_test(const Graph_generator& generatedGraph) {
         }
     }
     return min_width;
+}
+
+int semi_optimized_test(const Graph_generator& generatedGraph) {
+    Graph_semi graph(generatedGraph.get_matrix());
+    int g = 0;
+    int h = graph.mw(graph);
+    int f = h;
+    int ub = std::numeric_limits<int>::max();
+    std::vector<int> perfect_elim_order;
+    if (f < ub) {
+        graph.bnb_treewidth(graph, perfect_elim_order, ub, g, f);
+    }
+    return ub;
 }
 
 int optimized_test(const Graph_generator& generatedGraph) {
@@ -65,7 +81,7 @@ int main() {
         return 1;
     }
     experiment_results << "Average values for test size " << TEST_SIZE << std::endl;
-    experiment_results << "(n, e): time optimized, time brute, tree width optimized, tree width brute" << std::endl;
+    experiment_results << "(n, e): time optimized, time brute, time semi_optimized, tree width optimized, tree width brute, tree width semi_optimized" << std::endl;
 
     std::string line;
     while (std::getline(graph_specs, line)) {
@@ -80,26 +96,44 @@ int main() {
 
         double optimized_elapsed_time_avg = 0;
         double brute_elapsed_time_avg = 0;
+        double semi_optimized_elapsed_time_avg = 0;
         double optimized_tw_avg = 0;
         double brute_tw_avg = 0;
+        double semi_optimized_tw_avg = 0;
+
         for(int i=0; i<TEST_SIZE; i++) {
             Graph_generator generatedGraph{n, e};
             auto optimizedResult = executeAndMeasureTime(optimized_test, generatedGraph);
             optimized_elapsed_time_avg += optimizedResult.second;
             optimized_tw_avg += optimizedResult.first;
 
-            auto bruteResult =  executeAndMeasureTime(brute_test, generatedGraph);
-            brute_elapsed_time_avg += bruteResult.second;
-            brute_tw_avg += bruteResult.first;
+            auto semioptimizedResult = executeAndMeasureTime(semi_optimized_test, generatedGraph);
+            semi_optimized_elapsed_time_avg += semioptimizedResult.second;
+            semi_optimized_tw_avg += semioptimizedResult.first;
+
+            if(optimizedResult.first != semioptimizedResult.first) {
+                std::cout << "Different result: opt:" << optimizedResult.first << " semi_opt" << semioptimizedResult.first << std::endl;
+            }
+
+            if(!EXCLUDE_BRUTE_FORCE) {
+                auto bruteResult =  executeAndMeasureTime(brute_test, generatedGraph);
+                brute_elapsed_time_avg += bruteResult.second;
+                brute_tw_avg += bruteResult.first;
+            }
         }
         optimized_elapsed_time_avg /= TEST_SIZE;
-        brute_elapsed_time_avg /= TEST_SIZE;
+        semi_optimized_elapsed_time_avg /= TEST_SIZE;
         optimized_tw_avg /= TEST_SIZE;
-        brute_tw_avg /= TEST_SIZE;
+        semi_optimized_tw_avg /= TEST_SIZE;
+
+        if(!EXCLUDE_BRUTE_FORCE) {
+            brute_elapsed_time_avg /= TEST_SIZE;
+            brute_tw_avg /= TEST_SIZE;
+        }
 
         experiment_results << "(" << n << ", " << e << "): " 
-            << optimized_elapsed_time_avg << ", " << brute_elapsed_time_avg << ", "
-            << optimized_tw_avg << ", " << brute_tw_avg << std::endl;
+            << optimized_elapsed_time_avg << ", " << brute_elapsed_time_avg << ", " << semi_optimized_elapsed_time_avg << ", "
+            << optimized_tw_avg << ", " << brute_tw_avg << ", " << semi_optimized_tw_avg << std::endl;
 
         std::cout << "Done." << std::endl;
     }
