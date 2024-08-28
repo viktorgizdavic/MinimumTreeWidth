@@ -10,7 +10,7 @@
 #include <fstream>
 #include <sstream>
 
-#define TEST_SIZE (1000)
+#define TEST_SIZE (10)
 
 #define EXCLUDE_BRUTE_FORCE (1)
 
@@ -43,9 +43,9 @@ int brute_test(const Graph_generator& generatedGraph) {
 int semi_optimized_test(const Graph_generator& generatedGraph) {
     Graph_semi graph(generatedGraph.get_matrix());
     int g = 0;
+    int ub = std::numeric_limits<int>::max();
     int h = graph.mw(graph);
     int f = h;
-    int ub = std::numeric_limits<int>::max();
     std::vector<int> perfect_elim_order;
     if (f < ub) {
         graph.bnb_treewidth(graph, perfect_elim_order, ub, g, f);
@@ -112,7 +112,16 @@ int main() {
             semi_optimized_tw_avg += semioptimizedResult.first;
 
             if(optimizedResult.first != semioptimizedResult.first) {
-                std::cout << "Different result: opt:" << optimizedResult.first << " semi_opt" << semioptimizedResult.first << std::endl;
+                std::cout << "different result!\n";
+                auto bruteResult =  executeAndMeasureTime(brute_test, generatedGraph);
+                std::cout << "\nDifferent result: opt: " << optimizedResult.first << " semi_opt " << semioptimizedResult.first << " brute force result: " << bruteResult.first << std::endl;
+                generatedGraph.print_matrix();
+                if(bruteResult.first != optimizedResult.first) {
+                    std::cout << "ALL 3 DIFFERENT";
+                    return -1;
+                }
+               
+                return -1;
             }
 
             if(!EXCLUDE_BRUTE_FORCE) {

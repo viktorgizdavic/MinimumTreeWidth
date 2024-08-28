@@ -7,6 +7,9 @@
 
 #define EXCLUDED_VERTEX (-1)
 
+// https://webdoc.sub.gwdg.de/ebook/serien/ah/UU-CS/2005-018.pdf
+// najjednostavnija heuristika iz sekcije 5.1
+
 class Graph_semi {
 public:
     std::vector<std::vector<int>> graph;
@@ -15,8 +18,8 @@ public:
     int mw(Graph_semi graph) {
         int imax = std::numeric_limits<int>::max();
         Graph_semi initial_graph = Graph_semi(graph.graph);
-        std::vector<int> min_width_ordering;
 
+        int lb = 0;
         while (graph.get_current_length() >= 1) {
 
             int min_neighbours = imax;
@@ -25,25 +28,13 @@ public:
             for(int i = 0; i < graph.get_graph_length(); i++) {
                 int sum = graph.count_neighbours(i);
                 if(sum == EXCLUDED_VERTEX) continue;
-                if (sum < min_neighbours) {
+                if (sum <= min_neighbours) {
                     min_neighbours = sum;
                     min_vertex = i;
                 }
             }
-
-            min_width_ordering.push_back(min_vertex);
             graph.elim_vertex_without_simplicial(min_vertex);
-        }
-
-        int lb = 0;
-        for(unsigned current_vertex = 0; current_vertex < min_width_ordering.size(); current_vertex++) {
-            int neighbours_below = 0;
-            for(unsigned j = 0; j < current_vertex; j++) {
-                if(initial_graph.graph[current_vertex][j] > 0) {
-                    neighbours_below++; 
-                }
-            }
-            lb = std::max(lb, neighbours_below);
+            lb = std::max(lb, min_neighbours);
         }
 
         return lb;

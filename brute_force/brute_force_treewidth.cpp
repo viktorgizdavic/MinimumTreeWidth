@@ -20,7 +20,7 @@ int main() {
         {0, 0, 0, 0, 0, 0, 1, 0},
     };
 
-    Graph graph(test_graph);
+    Graph_brute graph(test_graph);
 
     graph.print_initial_graph();
 
