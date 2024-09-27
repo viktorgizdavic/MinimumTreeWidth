@@ -1,7 +1,6 @@
 #include "graph_generator.hpp"
 #include "brute_force/graph_brute_force.hpp"
-#include "optimized - minor min width lb/graph.hpp"
-#include "semi-optimized - min width lb/graph.hpp"
+#include "optimized/graph.hpp"
 
 #include <chrono>
 #include <utility>
@@ -40,20 +39,20 @@ int brute_test(const Graph_generator& generatedGraph) {
     return min_width;
 }
 
-int semi_optimized_test(const Graph_generator& generatedGraph) {
-    Graph_semi graph(generatedGraph.get_matrix());
+int min_width_test(const Graph_generator& generatedGraph) {
+    Graph graph(generatedGraph.get_matrix());
     int g = 0;
     int ub = std::numeric_limits<int>::max();
     int h = graph.mw(graph);
     int f = h;
     std::vector<int> perfect_elim_order;
     if (f < ub) {
-        graph.bnb_treewidth(graph, perfect_elim_order, ub, g, f);
+        graph.bnb_treewidth(MW_HEURISTIC, graph, perfect_elim_order, ub, g, f);
     }
     return ub;
 }
 
-int optimized_test(const Graph_generator& generatedGraph) {
+int minor_min_width_test(const Graph_generator& generatedGraph) {
     Graph graph(generatedGraph.get_matrix());
     int g = 0;
     int h = graph.mmw(graph);
@@ -61,7 +60,7 @@ int optimized_test(const Graph_generator& generatedGraph) {
     int ub = std::numeric_limits<int>::max();
     std::vector<int> perfect_elim_order;
     if (f < ub) {
-        graph.bnb_treewidth(graph, perfect_elim_order, ub, g, f);
+        graph.bnb_treewidth(MMW_HEURISTIC, graph, perfect_elim_order, ub, g, f);
     }
     return ub;
 }
@@ -81,7 +80,7 @@ int main() {
         return 1;
     }
     experiment_results << "Average values for test size " << TEST_SIZE << std::endl;
-    experiment_results << "(n, e): brute force, semi_optimized, optimized, tw brute, tw semi optimized, tw optimized" << std::endl;
+    experiment_results << "(n, e): brute force, mw, mmw, tw brute, tw mw, tw mmw" << std::endl;
 
     std::string line;
     while (std::getline(graph_specs, line)) {
@@ -94,45 +93,29 @@ int main() {
 
         std::cout << "Executing testing for (n, e) = (" << n << ", " << e << ") " << std::flush;
 
-        double optimized_elapsed_time_avg = 0;
         double brute_elapsed_time_avg = 0;
-        double semi_optimized_elapsed_time_avg = 0;
-        double optimized_tw_avg = 0;
+        double mmw_elapsed_time_avg = 0;
+        double mw_elapsed_time_avg = 0;
+        
         double brute_tw_avg = 0;
-        double semi_optimized_tw_avg = 0;
+        double mmw_tw_avg = 0;
+        double mw_tw_avg = 0;
 
         int test_size = TEST_SIZE;
         if(n >= 20) {
             test_size = 1;
         }
         for(int i=0; i<test_size; i++) {
-            std::cout << "optimized test:" << std::flush;
             Graph_generator generatedGraph{n, e};
-            auto optimizedResult = executeAndMeasureTime(optimized_test, generatedGraph);
-            optimized_elapsed_time_avg += optimizedResult.second;
-            optimized_tw_avg += optimizedResult.first;
-            std::cout << optimizedResult.second << "\n";
+            auto mmwResult = executeAndMeasureTime(minor_min_width_test, generatedGraph);
+            mmw_elapsed_time_avg += mmwResult.second;
+            mmw_tw_avg += mmwResult.first;
            
             if(n <= 20) {
-                std::cout << "semi optimized test:" << std::flush;
-                auto semioptimizedResult = executeAndMeasureTime(semi_optimized_test, generatedGraph);
-                semi_optimized_elapsed_time_avg += semioptimizedResult.second;
-                semi_optimized_tw_avg += semioptimizedResult.first;
-                std::cout << semioptimizedResult.second << "\n";
+                auto mwResult = executeAndMeasureTime(min_width_test, generatedGraph);
+                mw_elapsed_time_avg += mwResult.second;
+                mw_tw_avg += mwResult.first;
             }
-
-            /*if(optimizedResult.first != semioptimizedResult.first) {
-                std::cout << "different result!\n";
-                auto bruteResult =  executeAndMeasureTime(brute_test, generatedGraph);
-                std::cout << "\nDifferent result: opt: " << optimizedResult.first << " semi_opt " << semioptimizedResult.first << " brute force result: " << bruteResult.first << std::endl;
-                generatedGraph.print_matrix();
-                if(bruteResult.first != optimizedResult.first) {
-                    std::cout << "ALL 3 DIFFERENT";
-                    return -1;
-                }
-               
-                return -1;
-            }*/
 
             if(!EXCLUDE_BRUTE_FORCE && n < 10) {
                 auto bruteResult =  executeAndMeasureTime(brute_test, generatedGraph);
@@ -140,12 +123,12 @@ int main() {
                 brute_tw_avg += bruteResult.first;
             }
         }
-        optimized_elapsed_time_avg /= TEST_SIZE;
-        optimized_tw_avg /= TEST_SIZE;
+        mmw_elapsed_time_avg /= TEST_SIZE;
+        mmw_tw_avg /= TEST_SIZE;
 
         if(n <= 20) {
-            semi_optimized_elapsed_time_avg /= TEST_SIZE;
-            semi_optimized_tw_avg /= TEST_SIZE;
+            mw_elapsed_time_avg /= TEST_SIZE;
+            mw_tw_avg /= TEST_SIZE;
         }
 
         if(!EXCLUDE_BRUTE_FORCE && n < 10) {
@@ -154,8 +137,8 @@ int main() {
         }
 
         experiment_results << "(" << n << ", " << e << "): " 
-            << brute_elapsed_time_avg << ", " << semi_optimized_elapsed_time_avg << ", " << optimized_elapsed_time_avg << ", "
-            << brute_tw_avg << ", " << semi_optimized_tw_avg << ", " << optimized_tw_avg << std::endl;
+            << brute_elapsed_time_avg << ", " << mw_elapsed_time_avg << ", " << mmw_elapsed_time_avg << ", "
+            << brute_tw_avg << ", " << mw_tw_avg << ", " << mmw_tw_avg << std::endl;
 
         std::cout << "Done." << std::endl;
     }

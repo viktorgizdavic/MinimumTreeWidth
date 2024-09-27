@@ -7,17 +7,77 @@
 
 #define EXCLUDED_VERTEX (-1)
 
-// https://webdoc.sub.gwdg.de/ebook/serien/ah/UU-CS/2005-018.pdf
-// najjednostavnija heuristika iz sekcije 5.1
+#define MW_HEURISTIC (0)
+#define MMW_HEURISTIC (1)
 
-class Graph_semi {
+class Graph {
 public:
     std::vector<std::vector<int>> graph;
     int current_length = 0;
 
-    int mw(Graph_semi graph) {
+    Graph(int vertex_num) 
+        : current_length(vertex_num) {
+        graph.resize(vertex_num, std::vector<int>(vertex_num, 0));
+    }
+
+    Graph(std::vector<std::vector<int>> graph) 
+        : graph(graph), current_length(graph[0].size()) {
+    }
+    
+    ~Graph() {
+
+    }
+
+    int mmw(Graph graph) {
+        int lb = 0;
         int imax = std::numeric_limits<int>::max();
-        Graph_semi initial_graph = Graph_semi(graph.graph);
+        while (graph.get_current_length() > 1) {
+
+            int min_neighbours = imax;
+            int min_vertex = -1;
+
+            for(int i = 0; i < graph.get_graph_length(); i++) {
+                int neighbours_num = graph.count_neighbours(i);
+                if(neighbours_num == EXCLUDED_VERTEX) continue;
+                if (neighbours_num < min_neighbours) {
+                    min_neighbours = neighbours_num;
+                    min_vertex = i;
+                }
+            }
+
+            int min2_neighbours = imax;
+            int min2_vertex = -1;
+            for (int i = 0; i < graph.get_graph_length(); i++) {
+                if(graph.get_graph()[min_vertex][i] > 0) {
+                    int sum = graph.count_neighbours(i);
+                    if (sum < min2_neighbours) {
+                        min2_neighbours = sum;
+                        min2_vertex = i;
+                    }
+                }
+            }
+
+            auto row_col = graph.get_graph()[min2_vertex];
+            for(unsigned i = 0; i < row_col.size(); i++) {
+                graph.set_value_at(-1, min2_vertex, i);
+                graph.set_value_at(-1, i, min2_vertex);
+            }
+            graph.dec_current_length();
+
+            for (int i = 0; i < graph.get_graph_length(); i++) { 
+                if(row_col[i] > 0 && i != min_vertex) {
+                    graph.add_edge(min_vertex, i);
+                }
+            }
+
+            lb = std::max(lb, min_neighbours);
+        }
+        return lb;
+    }
+
+    int mw(Graph graph) {
+        int imax = std::numeric_limits<int>::max();
+        Graph initial_graph = Graph(graph.graph);
 
         int lb = 0;
         while (graph.get_current_length() >= 1) {
@@ -40,7 +100,7 @@ public:
         return lb;
     }
 
-    void bnb_treewidth(Graph_semi &graph, std::vector<int> &perfect_elim_ord, int &ub, int g, int f) {
+    void bnb_treewidth(int heuristic, Graph &graph, std::vector<int> &perfect_elim_ord, int &ub, int g, int f) {
         if (graph.get_current_length() < 2) {
             ub = std::min(f, ub);
             return;
@@ -51,31 +111,21 @@ public:
             int tmp_old = g;
             g = std::max(g, neighbours_num);
             auto row_col = graph.elim_vertex(i);
-            //graph.print_graph();
             perfect_elim_ord.push_back(i);
-            int h = mw(graph);
+            int h;
+            if(heuristic == MW_HEURISTIC) {
+                h = mw(graph);
+            } else if (heuristic == MMW_HEURISTIC) {
+                h = mmw(graph);
+            }
             f = std::max(g, h);
             if (f < ub) {
-                bnb_treewidth(graph, perfect_elim_ord, ub, g, f);
+                bnb_treewidth(heuristic, graph, perfect_elim_ord, ub, g, f);
             }
             graph.return_edges(row_col, i);
             perfect_elim_ord.pop_back();
-            //graph.print_graph();
             g = tmp_old;
-        } 
-    }
-
-    Graph_semi(int vertex_num) 
-        : current_length(vertex_num) {
-        graph.resize(vertex_num, std::vector<int>(vertex_num, 0));
-    }
-
-    Graph_semi(std::vector<std::vector<int>> graph) 
-        : graph(graph), current_length(graph[0].size()) {
-    }
-    
-    ~Graph_semi() {
-
+        }
     }
     
     void add_edge(int neighbour1, int neighbour2) {
@@ -102,14 +152,6 @@ public:
         current_length++;
     }
 
-    void elim_vertex_without_simplicial(int vertex) {
-        for(unsigned i = 0; i < graph.size(); i++) {
-            graph[vertex][i] = graph[i][vertex] = -1;
-        }
-
-        current_length--;
-    }
-    
     std::vector<int> elim_vertex(int vertex) {
         std::vector<int> row_col = graph[vertex];
 
@@ -130,6 +172,14 @@ public:
 
         current_length--;
         return row_col;
+    }
+
+    void elim_vertex_without_simplicial(int vertex) {
+        for(unsigned i = 0; i < graph.size(); i++) {
+            graph[vertex][i] = graph[i][vertex] = -1;
+        }
+
+        current_length--;
     }
 
     int count_neighbours(int vertex) {
