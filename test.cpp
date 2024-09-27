@@ -9,8 +9,6 @@
 #include <fstream>
 #include <sstream>
 
-#define TEST_SIZE (3)
-
 #define EXCLUDE_BRUTE_FORCE (0)
 
 template<typename Func, typename Arg>
@@ -79,7 +77,14 @@ int main() {
         graph_specs.close();
         return 1;
     }
-    experiment_results << "Average values for test size " << TEST_SIZE << std::endl;
+
+    std::string test_size_str;
+    std::getline(graph_specs, test_size_str);
+    std::istringstream iss_size(test_size_str);
+    int test_size;
+    iss_size >> test_size;
+
+    experiment_results << "Average values for test size " << test_size << std::endl;
     experiment_results << "(n, e): brute force, mw, mmw, tw brute, tw mw, tw mmw" << std::endl;
 
     std::string line;
@@ -101,21 +106,15 @@ int main() {
         double mmw_tw_avg = 0;
         double mw_tw_avg = 0;
 
-        int test_size = TEST_SIZE;
-        if(n >= 20) {
-            test_size = 1;
-        }
         for(int i=0; i<test_size; i++) {
             Graph_generator generatedGraph{n, e};
             auto mmwResult = executeAndMeasureTime(minor_min_width_test, generatedGraph);
             mmw_elapsed_time_avg += mmwResult.second;
             mmw_tw_avg += mmwResult.first;
-           
-            if(n <= 20) {
-                auto mwResult = executeAndMeasureTime(min_width_test, generatedGraph);
-                mw_elapsed_time_avg += mwResult.second;
-                mw_tw_avg += mwResult.first;
-            }
+
+            auto mwResult = executeAndMeasureTime(min_width_test, generatedGraph);
+            mw_elapsed_time_avg += mwResult.second;
+            mw_tw_avg += mwResult.first;
 
             if(!EXCLUDE_BRUTE_FORCE && n < 10) {
                 auto bruteResult =  executeAndMeasureTime(brute_test, generatedGraph);
@@ -123,17 +122,15 @@ int main() {
                 brute_tw_avg += bruteResult.first;
             }
         }
-        mmw_elapsed_time_avg /= TEST_SIZE;
-        mmw_tw_avg /= TEST_SIZE;
+        mmw_elapsed_time_avg /= test_size;
+        mmw_tw_avg /= test_size;
 
-        if(n <= 20) {
-            mw_elapsed_time_avg /= TEST_SIZE;
-            mw_tw_avg /= TEST_SIZE;
-        }
+        mw_elapsed_time_avg /= test_size;
+        mw_tw_avg /= test_size;
 
         if(!EXCLUDE_BRUTE_FORCE && n < 10) {
-            brute_elapsed_time_avg /= TEST_SIZE;
-            brute_tw_avg /= TEST_SIZE;
+            brute_elapsed_time_avg /= test_size;
+            brute_tw_avg /= test_size;
         }
 
         experiment_results << "(" << n << ", " << e << "): " 

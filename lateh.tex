@@ -63,7 +63,7 @@
 
 \title{Minimum Tree Width} 
  
-\author{Vladimir Kastratović, Viktor Gizdavić}
+\author{Vladimir Kastratović 31/2019, Viktor Gizdavić 146/2017}
 
 
 \begin{document}
@@ -86,18 +86,42 @@ Dekompozicija stabla je par $\left(\{X_i:i\in I\},T\right)$ gde je $T=\left(I,F\
 
 Širina stabla dekompozicije je jednaka $Tw = \max_{i \in I} \vert X_i\vert-1$. Minimalna širina stabla je najmanje takvo $Tw$.
 
-Ovaj problem je NP težak problem. Može da se aproksimira unutar $O(\log \vert V\vert)$ složenosti. Mnogi algoritmi koji rešavaju NP teške probleme iz oblasti veštačke inteligencije, operativnih istraživanja, dizajna kola itd. su eksonencijalne složenosti samo pri izračunavanju širine stabla. Npr: "Bucket
-elimination [Dechter, 1999]" i "Junction-tree elimination [Lauritzen and Spiegelhalter, 1988]". Ovi algoritmi se odvijaju u dva koraka: (1) konstrukcija dobre dekompozicije stabla i (2) rešavanje problema nad ovom dekompozicijom, gde je drugi korak uglavnom eksponencijalan po širini stabla dekompozicije iz koraka (1). Radi postizanja efikasnijeg rešenja, može se koristiti "branch and bound" tehnika. Neke od poznatih heuristike koje se koriste u ovoj metodi su "min-degree", "max-cardinality search, min-fill", međutim, u najgorem slučaju, algoritam može biti eksponencijalne složenosti. Zbog toga, u ovom radu smo koristili noviju heuristiku baziranu na "minor-min-width", koju ćemo opisati u narednim sekcijama.
+Ovaj problem pripada grupi NP-teških problema za koje se ne zna da postoji algoritam koji izračunava rešenje u polinomijalno mnogo koraka. Mnogi algoritmi koji rešavaju NP-teške probleme iz oblasti računarske inteligencije, su eksonencijalne složenosti samo pri izračunavanju širine stabla. Jedan od sličnih problema ovom iz naslova je: "Junction-tree elimination [Lauritzen and Spiegelhalter, 1988]". Ovaj algoritam se odvija u dva koraka: (1) konstrukcija dobre dekompozicije stabla i (2) rešavanje problema nad ovom dekompozicijom, gde je drugi korak uglavnom eksponencijalan po širini stabla dekompozicije iz koraka (1). Radi postizanja efikasnijeg rešenja, može se koristiti "branch and bound" tehnika. Neke od poznatih heuristike koje se koriste u ovoj metodi su "min-width", "max-cardinality search, min-fill". Međutim, iako njihova upotreba obećava efikasnije rešenje, u najgorem slučaju, algoritam može biti eksponencijalne složenosti. Zbog toga, u ovom radu je izložena novija heuristika bazirana na "min-width", koja će biti opisana u narednim sekcijama. Algoritam koji upotrebljava ovu heuristiku u svom izračunavanju, može se završiti u $O(\log \vert V\vert)$ složenosti.
+
+\section{Definicije i leme}
+Pre nego što predstavimo rešenjee problema, potrebno je upoznati se sledecim definicijama i lemama.
+
+\textbf{Definicija 2.1.} Kord ciklusa $C$ je grana koja se ne nalazi u ciklusu, ali njene tačke se nalaze u ciklusu.
+
+\textbf{Definicija 2.2.} Za ciklus $C$ kažemo da je bez korda, ako ne sadrži nijedan kord i dužine je najmanje 4.
+
+\textbf{Definicija 2.3.} Za graf $G$ kažemo da je trijangulisan ukoliko u njemu ne postoji ciklus bez korda.
+
+\textbf{Definicija 2.4.} Za čvor $v$ grafa G, kažemo da je simplicijalan, ukoliko njegovi susedi kreiraju klik(potpuno povezan graf). Čvor $v$ je skoro simplicijalan ukoliko svi susedi osim jednog formiraju klik.
+
+\textbf{Definicija 2.5.} Poredak $\pi=$[$v_1,v_2,...,v_n$], nazivamo poredak savršene eliminacije ukoliko za svako $1\leq i \leq n$, $v_i$ je simplicijalan u podgrafu ${G^'} = ({V^'}, {E^'})$ gde je ${V^'} =$ \{$v_i,...v_n$\}.
+
+\textbf{Definicija 2.6.} Klik veličine k + 1 je k-stablo veličine  k + 1. K-stablo veličine n + 1 može se konstruisati od k-stabla veličine n tako što se doda novi čvor i poveže se sa bilo kojim klikom veličine k. Podgraf k-stabla je parcijalno k-stablo.
+
+\textbf{Lema 2.7.} K-stablo je širine k. Parcijalno k-stablo je širine najviše k.
+
+\textbf{Lema 2.8.} Graf je trijangulisan akko postoji poredak savršene eliminacije. Dodatno, ukoliko je trijangulisan, bilo koji čvor može biti na početku permutacije.
+
+\textbf{Lema 2.9.} Za bilo koji poredak savršene eliminacije kordalnog grafa T, važi da je širina od T jednaka \max \left( |N(v_i)| \, \big| \, v \in V, \, N(v) \cap \{v_i, \ldots, v_n\} \right)
+
+\textbf{Lema 2.10.} Neka je $G$ graf i $M$ njegov minor. Tada važi da je \[\text{tw}(G) \geq \text{tw}(M)\].
+
+
+
 
 \section{Algoritmi za rešavanje problema}
 \subsection{Gruba sila}
 Algoritam grube sile podrazumeva prolazak kroz sve moguće permutacije čvorova i nalaženje minimuma od dobijenih širina stabala.
 
-Širina stabla se računa prolaskom kroz permutaciju, i dekomponovanjem grafa na drvo sačinjeno od torbi čvorova. Torbe dobijamo tako sto uzmemo trenutni čvor u permutaciji i napravimo od njega i njegovih suseda potencijalan skup za narednu torbu. Ako je dobijeni skup podskup vec postojeće torbe, ne dodajemo ga u novonastalo drvo. U suprotnom, vezujemo ga sa svim prethodnim torbama sa kojima ima presek čvorova. Naknadno, brisemo obrađeni čvor, i povezujemo njegove susede svaki sa svakim (pravimo ga simplicijalnim).
+Širina stabla se računa obradom jedne permutacije, i dekomponovanjem grafa na drvo sačinjeno od torbi čvorova. Torbe su zapravo čvorovi koji objedinjuju više originalnih čvorova. Originalni čvorovi se redom izbacuju iz trenutne permutacije i pritom dodaju u torbe čuvajući simplicijalnost grafa. Čuvanjem simplicijalnosti, otvaraju se nove prilike kao kandidati za torbe. Ukoliko u nekom trenutku torba predstavlja podksup neke od već postojećih torbi, ne dodaje se u novonastalo drvo. U suprotnom, nova torba se vezuje za sve torbe sa kojima ima presek. Permutacija se smatra obrađenom kada su svi čvorovi obradjeni, a širina stabla je za jedan manje od broja čvorova u najvećoj torbi.
 
-Nakon prolaska kroz celu permutaciju, pronalazimo torbu sa najvećim brojem čvorova. Širina stabla je tada broj čvorova u pronađenoj torbi, minus jedan.
 \subsection{Optimizovani algoritam}
-Za izračunavanje minimalne širine stabla koristimo "branch and bound" algoritam. Za heuristiku, "minor-min-width".
+Za izračunavanje minimalne širine stabla koristimo "branch and bound" algoritam. Za heuristiku, "min-width" i "minor-min-width".
 
 \subsubsection{min-width algoritam}
 
@@ -109,11 +133,12 @@ Izlaz: Donja granica širine grafa G.
     \item \textit{lb} = 0
     \item Ponavljaj:
     \begin{enumerate}
-    \item Spoji granu između čvora \textit{v} najmanjeg stepena i čvora $u\in N(v)$ takvog da je stepen ćvora $u$ najmanji u $N(v)$ da bi napravili novi graf $G'$
+    \item Nađi čvor $v$ sa najmanjim stepenom.
+    \item Napravi novi graf G' bez čvora $v$.
     \item $lb = MAX(lb, degree_G(v))$
     \item Postavi G na G'
     \end{enumerate}
-    \item dokle god ima ćvorova u G
+    \item dokle god ima čvorova u G
     \item return \textit{lb}
 \end{enumerate}
 
@@ -131,7 +156,7 @@ Izlaz: Donja granica širine grafa G.
     \item $lb = MAX(lb, degree_G(v))$
     \item Postavi G na G'
     \end{enumerate}
-    \item dokle god ima ćvorova u G
+    \item dokle god ima čvorova u G
     \item return \textit{lb}
 \end{enumerate}
 
@@ -161,9 +186,19 @@ Izlaz: Minimalna širina stabla.
     \end{enumerate}
 \end{enumerate}
 
-Na početku, gornja granica se postavlja na beskonačnost, a donja granica se izračunava korišćenjem minor-min-width algoritma.
+Operacija $elim(elim({G^s}, v)$ podrazumeva eliminisanje čvora $v$ čineći ga simplicijalnim. Rezultat ove operacije je:
+\[
+G_0 = (V \setminus \{v\}, E \cup E_0), \quad \text{gde } E_0 = \{(v_1, v_2) \mid v_1, v_2 \in N(v)\}
+\]
 
-Ako je gornja granica manja ili jednaka donjoj, vraćamo nju kao optimalno rešenje. U suprotnom, inicijalizujemo najbolje rešenje na gornju granicu, i pokrećemo proceduru BB u potrazi za boljim rešenjem. Ako u toku BB-a nadjemo parcijalno rešenje sa donjom granicom većom od trenutnog $ub$, vrši se odsecanje te grane pretrage. U suprotnom, ako uspešno prođemo kroz sve čvorove, najbolje rešenje se postavlja na manji od gornje granice i izračunate donje granice.
+BnB algoritam je optimizacija grube sile koristeći heuristike.
+
+Pre samog pokretanja algoritma, vrednost gornje granice se postavlja na beskonačno.
+
+Vrednost donje granice se računa uz pomoć heuristike u toku rada algoritma nad trenutnom permutacijom.
+
+Ukoliko u toku obrade neke permutacije, vrednost donje granice postane veća od gornje, obustavlja se dalja pretraga.
+U suprotnom, vrednost gornje granice se ažurira na maksimum donje granice i koristi se u narednim permutacijama.
 
 Svako stanje $s$ je par: Graf ${G^s}$ i parcijalni poredak ${x^s}$. Graf ${G^s}$ u stanju $s$ se dobija izbacivanjem čvorova u poretku ${x^s}$ iz originalnog grafa $G$. Naredna stanja se dobijaju iz stanja $s$ izbacivanjem proizvoljnog čvora $v \in V_{G^s}$. Vrednost $g$ stanja $s$ je širina poretka ${x^s}$ od početnog čvora, vrednost $h$ je donja granica širine stabla ${G^s}$.
 
@@ -177,7 +212,7 @@ U narednoj tabeli su prikazani rezultati izvršavanja svakog od tri algoritma. G
 \begin{center}\small
     \begin{tabular}{ | p{0.5cm} | p{0.5cm} | p{2cm} | p{3cm} | p{2cm} | p{1cm}|}
     \hline
-    \textbf{n} & \textbf{e} & \textbf{brute force} & \textbf{semi optimized} & \textbf{optimized} & \textbf{tw} \\ \hline
+    \textbf{n} & \textbf{e} & \textbf{brute force} & \textbf{min-width} & \textbf{minor-min-width} & \textbf{avg tw} \\ \hline
     5 & 8 & 0.00155411 & 0.000109767 & 0.000291568 & 3\\ \hline
     8 & 15 & 1.29493 & 0.000596336 & 0.00301754 & 3.33333\\ \hline
     10 & 30 & - & 0.00208704 & 0.0141712 & 6\\ \hline
@@ -194,17 +229,17 @@ U narednoj tabeli su prikazani rezultati izvršavanja svakog od tri algoritma. G
 \end{table}
 
 
-Za brute force algoritam, već za n >=10, vreme izvršavanja algoritma traje makar 5 minuta, pa su ti rezultati odsečeni.
+Za algoritam grube sile, već za n >=10, vreme izvršavanja algoritma traje makar 5 minuta, pa su ti rezultati odsečeni.
 
 \section{Zaključak}
 BnB algoritam izložen u sekciji 2.2.2 se može dodatno unaprediti na sledeće načine:
 \begin{enumerate}
-    \item Prilikom inicijalizacije, umesto postavljanja gornje granice na beskonačnost, može se izračunati min-fill heuristikom.
+    \item Prilikom inicijalizacije, umesto postavljanja gornje granice na beskonačnost, može se izračunati min-fill ili nekom drugom heuristikom. Ovo doprinosu bržem zasecanju.
     \item Poboljšavanje vrednosti $f$ za svako stanje $s$
     \item Redukcija faktora grananja u svakom stanju
     \item Korišćenje pravila propagacije i zasecanja
+    \item Matricu povezanosti zameniti katalogom čiji su ključevi čvorovi grafa, a preslikane vrednosti skup suseda čvorova. 
 \end{enumerate}
-Neke od navedenih poboljšanja su dalje izložena u radu [1].
 
 \bibliographystyle{ieeetr} %alpha, apalike, ieeetr
 
