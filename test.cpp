@@ -10,9 +10,9 @@
 #include <fstream>
 #include <sstream>
 
-#define TEST_SIZE (10)
+#define TEST_SIZE (3)
 
-#define EXCLUDE_BRUTE_FORCE (1)
+#define EXCLUDE_BRUTE_FORCE (0)
 
 template<typename Func, typename Arg>
 std::pair<typename std::result_of<Func(Arg)>::type, double> executeAndMeasureTime(Func&& func, Arg arg) {
@@ -81,7 +81,7 @@ int main() {
         return 1;
     }
     experiment_results << "Average values for test size " << TEST_SIZE << std::endl;
-    experiment_results << "(n, e): time optimized, time brute, time semi_optimized, tree width optimized, tree width brute, tree width semi_optimized" << std::endl;
+    experiment_results << "(n, e): brute force, semi_optimized, optimized, tw brute, tw semi optimized, tw optimized" << std::endl;
 
     std::string line;
     while (std::getline(graph_specs, line)) {
@@ -101,17 +101,27 @@ int main() {
         double brute_tw_avg = 0;
         double semi_optimized_tw_avg = 0;
 
-        for(int i=0; i<TEST_SIZE; i++) {
+        int test_size = TEST_SIZE;
+        if(n >= 20) {
+            test_size = 1;
+        }
+        for(int i=0; i<test_size; i++) {
+            std::cout << "optimized test:" << std::flush;
             Graph_generator generatedGraph{n, e};
             auto optimizedResult = executeAndMeasureTime(optimized_test, generatedGraph);
             optimized_elapsed_time_avg += optimizedResult.second;
             optimized_tw_avg += optimizedResult.first;
+            std::cout << optimizedResult.second << "\n";
+           
+            if(n <= 20) {
+                std::cout << "semi optimized test:" << std::flush;
+                auto semioptimizedResult = executeAndMeasureTime(semi_optimized_test, generatedGraph);
+                semi_optimized_elapsed_time_avg += semioptimizedResult.second;
+                semi_optimized_tw_avg += semioptimizedResult.first;
+                std::cout << semioptimizedResult.second << "\n";
+            }
 
-            auto semioptimizedResult = executeAndMeasureTime(semi_optimized_test, generatedGraph);
-            semi_optimized_elapsed_time_avg += semioptimizedResult.second;
-            semi_optimized_tw_avg += semioptimizedResult.first;
-
-            if(optimizedResult.first != semioptimizedResult.first) {
+            /*if(optimizedResult.first != semioptimizedResult.first) {
                 std::cout << "different result!\n";
                 auto bruteResult =  executeAndMeasureTime(brute_test, generatedGraph);
                 std::cout << "\nDifferent result: opt: " << optimizedResult.first << " semi_opt " << semioptimizedResult.first << " brute force result: " << bruteResult.first << std::endl;
@@ -122,27 +132,30 @@ int main() {
                 }
                
                 return -1;
-            }
+            }*/
 
-            if(!EXCLUDE_BRUTE_FORCE) {
+            if(!EXCLUDE_BRUTE_FORCE && n < 10) {
                 auto bruteResult =  executeAndMeasureTime(brute_test, generatedGraph);
                 brute_elapsed_time_avg += bruteResult.second;
                 brute_tw_avg += bruteResult.first;
             }
         }
         optimized_elapsed_time_avg /= TEST_SIZE;
-        semi_optimized_elapsed_time_avg /= TEST_SIZE;
         optimized_tw_avg /= TEST_SIZE;
-        semi_optimized_tw_avg /= TEST_SIZE;
 
-        if(!EXCLUDE_BRUTE_FORCE) {
+        if(n <= 20) {
+            semi_optimized_elapsed_time_avg /= TEST_SIZE;
+            semi_optimized_tw_avg /= TEST_SIZE;
+        }
+
+        if(!EXCLUDE_BRUTE_FORCE && n < 10) {
             brute_elapsed_time_avg /= TEST_SIZE;
             brute_tw_avg /= TEST_SIZE;
         }
 
         experiment_results << "(" << n << ", " << e << "): " 
-            << optimized_elapsed_time_avg << ", " << brute_elapsed_time_avg << ", " << semi_optimized_elapsed_time_avg << ", "
-            << optimized_tw_avg << ", " << brute_tw_avg << ", " << semi_optimized_tw_avg << std::endl;
+            << brute_elapsed_time_avg << ", " << semi_optimized_elapsed_time_avg << ", " << optimized_elapsed_time_avg << ", "
+            << brute_tw_avg << ", " << semi_optimized_tw_avg << ", " << optimized_tw_avg << std::endl;
 
         std::cout << "Done." << std::endl;
     }

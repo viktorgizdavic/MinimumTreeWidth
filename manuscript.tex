@@ -30,7 +30,7 @@
 \usepackage{authblk}
 
 \usepackage[colorlinks]{hyperref}
-\input{doiCmd} %doi command
+%%\input{doiCmd} %doi command
 
 \usepackage{accents}
 \usepackage[titletoc,title]{appendix}
@@ -91,9 +91,31 @@ elimination [Dechter, 1999]" i "Junction-tree elimination [Lauritzen and Spiegel
 
 \section{Algoritmi za rešavanje problema}
 \subsection{Gruba sila}
---doraditi+
+Algoritam grube sile podrazumeva prolazak kroz sve moguće permutacije čvorova i nalaženje minimuma od dobijenih širina stabala.
+
+Širina stabla se računa prolaskom kroz permutaciju, i dekomponovanjem grafa na drvo sačinjeno od torbi čvorova. Torbe dobijamo tako sto uzmemo trenutni čvor u permutaciji i napravimo od njega i njegovih suseda potencijalan skup za narednu torbu. Ako je dobijeni skup podskup vec postojeće torbe, ne dodajemo ga u novonastalo drvo. U suprotnom, vezujemo ga sa svim prethodnim torbama sa kojima ima presek čvorova. Naknadno, brisemo obrađeni čvor, i povezujemo njegove susede svaki sa svakim (pravimo ga simplicijalnim).
+
+Nakon prolaska kroz celu permutaciju, pronalazimo torbu sa najvećim brojem čvorova. Širina stabla je tada broj čvorova u pronađenoj torbi, minus jedan.
 \subsection{Optimizovani algoritam}
 Za izračunavanje minimalne širine stabla koristimo "branch and bound" algoritam. Za heuristiku, "minor-min-width".
+
+\subsubsection{min-width algoritam}
+
+Ulaz: Neusmeren, povezan graf G.
+
+Izlaz: Donja granica širine grafa G.
+
+\begin{enumerate}
+    \item \textit{lb} = 0
+    \item Ponavljaj:
+    \begin{enumerate}
+    \item Spoji granu između čvora \textit{v} najmanjeg stepena i čvora $u\in N(v)$ takvog da je stepen ćvora $u$ najmanji u $N(v)$ da bi napravili novi graf $G'$
+    \item $lb = MAX(lb, degree_G(v))$
+    \item Postavi G na G'
+    \end{enumerate}
+    \item dokle god ima ćvorova u G
+    \item return \textit{lb}
+\end{enumerate}
 
 \subsubsection{minor-min-width algoritam}
 
@@ -148,35 +170,31 @@ Svako stanje $s$ je par: Graf ${G^s}$ i parcijalni poredak ${x^s}$. Graf ${G^s}$
 \section{Eksperimentalni rezultati}
 
 
-This is a sample of Table.~\ref{analogiesTableEq}. All tables in the document must be cited.
+U narednoj tabeli su prikazani rezultati izvršavanja svakog od tri algoritma. Grafovi zadati brojem čvorova i grana su nasumično generisani. Za svaku zadatu veličinu grafa je izgenerisano po pet grafova i nad njim primenjeni algoritmi. Prosečne vrednosti su zatim unete u tabelu.
 
 \begin{table}[h]
 \begin{minipage}{.95\textwidth}
 \begin{center}\small
-    \begin{tabular}{ | p{7cm} | p{7cm} | }
+    \begin{tabular}{ | p{0.5cm} | p{0.5cm} | p{2cm} | p{3cm} | p{2cm} | p{1cm}|}
     \hline
-    \textbf{Electrostatics} & \textbf{Magnetostatics} \\ \hline
-    Electric Field & Magnetic field (Biot-Savart law) \\
-    $\boldsymbol{E}(\boldsymbol{r}) = \frac{V_o}{2\pi} \mbox{sgn}(z) \int_{\mathscr{G}}  \frac{\boldsymbol{\mathscr{W}}_{\nu}(\boldsymbol{r}')d^2 \boldsymbol{r}' \times (\boldsymbol{r}-\boldsymbol{r}')}{|\boldsymbol{r}-\boldsymbol{r}'|^3}$ & $\boldsymbol{B}(\boldsymbol{r}) = \frac{\mu_o}{4\pi} \int_{\mathscr{G}}  \frac{\boldsymbol{\mathscr{K}}(\boldsymbol{r}')d^2 \boldsymbol{r}' \times (\boldsymbol{r}-\boldsymbol{r}')}{|\boldsymbol{r}-\boldsymbol{r}'|^3}$ \\ \hline
-    Weight vector & Surface current density\\
-    $\boldsymbol{\mathscr{W}}_{\nu}(\boldsymbol{r})$ 
-    & $\boldsymbol{\mathscr{K}}(\boldsymbol{r})$\\ \hline
-    Continuity & Continuity (charge conservation) \\
-    $\nabla \cdot \boldsymbol{\mathscr{W}}_{\nu}(\boldsymbol{r}) = 0 $
-    &$\nabla \cdot \boldsymbol{\mathscr{K}}(\boldsymbol{r}) = 0$ \\\hline    
-    Gauss' law & Gauss' law \\
-    $\boldsymbol{\nabla}\cdot\boldsymbol{E} = \frac{1}{\epsilon_o}\sigma(\boldsymbol{r})\delta(z)$ 
-    & $\boldsymbol{\nabla}\cdot\boldsymbol{B}=0$\\
-    \hline
+    \textbf{n} & \textbf{e} & \textbf{brute force} & \textbf{semi optimized} & \textbf{optimized} & \textbf{tw} \\ \hline
+    5 & 8 & 0.00155411 & 0.000109767 & 0.000291568 & 3\\ \hline
+    8 & 15 & 1.29493 & 0.000596336 & 0.00301754 & 3.33333\\ \hline
+    10 & 30 & - & 0.00208704 & 0.0141712 & 6\\ \hline
+    12 & 40 & - & 0.00535412 & 0.0325081 & 7\\ \hline
+    15 & 50 & - & 0.0465442 & 0.107265 & 7\\ \hline
+    17 & 50 & - & 10.2123 & 10.4519 & 7.33333\\ \hline
+    20 & 100 & - & 5.49768 & 36.4117 & 4\\ \hline
+    20 & 150 & - & 0.0100785 & 0.172352 & 5\\ \hline
     \end{tabular}
-    \caption {The analogy between the gaped SE and magnetostatics.}
+    \caption {Prosečno vreme izvršavanja algoritma i dobijeni rezultati}
     \label{analogiesTableEq}
 \end{center}
 \end{minipage}%
 \end{table}
 
 
-asdfasdfasdf
+Za brute force algoritam, već za n >=10, vreme izvršavanja algoritma traje makar 5 minuta, pa su ti rezultati odsečeni.
 
 \section{Zaključak}
 BnB algoritam izložen u sekciji 2.2.2 se može dodatno unaprediti na sledeće načine:

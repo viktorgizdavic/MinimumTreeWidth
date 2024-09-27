@@ -1,4 +1,0 @@
-Average values for test size 10
-(n, e): time optimized, time brute, time semi_optimized, tree width optimized, tree width brute, tree width semi_optimized
-(10, 15): 0.0117853, 0, 0.00337837, 3, 0, 3
-(15, 30): 0.523298, 0, 1.06242, 4.2, 0, 4.2

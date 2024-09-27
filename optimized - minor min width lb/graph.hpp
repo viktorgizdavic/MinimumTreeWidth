@@ -21,10 +21,10 @@ public:
             int min_vertex = -1;
 
             for(int i = 0; i < graph.get_graph_length(); i++) {
-                if(graph.count_neighbours(i) == EXCLUDED_VERTEX) continue;
-                int sum = graph.count_neighbours(i);
-                if (sum < min_neighbours) {
-                    min_neighbours = sum;
+                int neighbours_num = graph.count_neighbours(i);
+                if(neighbours_num == EXCLUDED_VERTEX) continue;
+                if (neighbours_num < min_neighbours) {
+                    min_neighbours = neighbours_num;
                     min_vertex = i;
                 }
             }
@@ -72,9 +72,10 @@ public:
             return;
         }
         for (int i = 0; i < graph.get_graph_length(); i++) {
-            if(graph.count_neighbours(i) == EXCLUDED_VERTEX) continue;
+            int neighbours_num = graph.count_neighbours(i);
+            if(neighbours_num == EXCLUDED_VERTEX) continue;
             int tmp_old = g;
-            g = std::max(g, graph.count_neighbours(i));
+            g = std::max(g, neighbours_num);
             auto row_col = graph.elim_vertex(i);
             //graph.print_graph();
             perfect_elim_ord.push_back(i);
